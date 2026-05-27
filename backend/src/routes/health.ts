@@ -14,6 +14,56 @@ import { audit } from '../middleware/audit';
 
 const router = Router();
 
+/**
+ * @openapi
+ * /health/live:
+ *   get:
+ *     tags: [Health]
+ *     summary: Liveness probe — unauthenticated, returns minimal status
+ *     description: >
+ *       Intended for Kubernetes liveness probes. Returns { status: "ok" }
+ *       without exposing any dependency information to unauthenticated callers.
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Service is alive
+ */
+router.get('/live', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+/**
+ * @openapi
+ * /health/ready:
+ *   get:
+ *     tags: [Health]
+ *     summary: Readiness probe — authenticated, returns full dependency status
+ *     description: >
+ *       Intended for Kubernetes readiness probes and internal monitoring.
+ *       Requires a valid bearer token. Returns detailed dependency health so
+ *       that dependency information is not exposed to unauthenticated callers.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All dependencies are healthy
+ *       401:
+ *         description: Missing or invalid bearer token
+ *       500:
+ *         description: Health check failed
+ */
+router.get('/ready', authenticate, async (req, res) => {
+  try {
+    const healthService = getHealthService();
+    const status = await healthService.getSystemStatus();
+    res.status(200).json(status);
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Health check failed',
+    });
+  }
+});
+
 // Valid service names for alert configuration
 const VALID_SERVICES = ['database', 'redis', 's3', 'twitter', 'youtube', 'facebook'] as const;
 
