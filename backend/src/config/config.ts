@@ -15,6 +15,12 @@ const envSchema = z.object({
   // Override here to hard-pin values regardless of NODE_ENV.
   DB_CONNECTION_LIMIT: z.coerce.number().int().positive().optional(),
   DB_POOL_TIMEOUT: z.coerce.number().int().positive().optional(),
+  // Set to 'true' when a PgBouncer proxy sits in front of Postgres.
+  // In transaction mode, PgBouncer requires connection_limit=1 per application process.
+  PGBOUNCER_MODE: z
+    .string()
+    .optional()
+    .transform((v) => v === 'true'),
 
   // ── JWT ───────────────────────────────────────────────────────────────────
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),

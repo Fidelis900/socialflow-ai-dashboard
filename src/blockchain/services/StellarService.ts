@@ -24,6 +24,10 @@ export class StellarService {
     this.config = initialConfig;
     this.pool = this.initializePool(this.config.horizonUrl);
     this.offlineQueue = new OfflineQueue(redisClient);
+    // Restore any transactions queued before the last restart
+    this.offlineQueue.restoreFromRedis().catch((err) =>
+      console.error('Failed to restore offline queue from Redis:', err),
+    );
   }
 
   // --- 2.2 Connection Management ---
